@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
+import coremltools as ct
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from typing import Tuple
+
 
 class ForestFireModel:
     def __init__(self, data_url: str):
@@ -48,3 +50,30 @@ class ForestFireModel:
         prediction = "fire" if prob_fire > prob_no_fire else "not fire"
 
         return prediction, prob_fire * 100, prob_no_fire * 100
+
+    def export_to_coreml(self, model_path="FirePredictor.mlmodel") -> None:
+        import coremltools as ct
+
+        # Create a pipeline input and output
+        input_features = ['Temperature', 'RH (Relative Humidity)', 'WS (Wind Speed)', 'Rain']
+
+        # Wrap the scaler and model in a pipeline
+        from sklearn.pipeline import Pipeline
+        pipeline_model = Pipeline([
+            ('scaler', self.scaler),
+            ('classifier', self.model)
+        ])
+
+        # Convert the pipeline
+        coreml_model = ct.converters.sklearn.convert(pipeline_model, input_features, "Result")
+
+        coreml_model.author = "Your Name"
+        coreml_model.short_description = "Forest Fire Prediction Model using Scikit-Learn"
+
+        coreml_model.save(model_path)
+        print(f"✅ Core ML model saved to: {model_path}")
+
+
+
+
+
